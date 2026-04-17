@@ -23,6 +23,7 @@ public class MainCliente {
             out.writeUTF(inputNombrePropio);
 
 
+            //Hilo para que el usuario pueda recibir mensajes sin enviar nada
             Thread hiloEscucha = new Thread(( )-> {
                 try {
                     while (true) {

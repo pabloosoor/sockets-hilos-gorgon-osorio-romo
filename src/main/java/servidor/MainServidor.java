@@ -38,7 +38,7 @@ public class MainServidor {
                 
                 inputNombre = in.readUTF();
                 ConexionHilo usuarioConectado = new ConexionHilo(in, out,inputNombre);
-                System.out.println("(Desde servidor) Cliente conectado");
+                System.out.println("(Desde servidor) Cliente conectado: " + inputNombre);
                 
                 usuariosConectados.put(inputNombre, usuarioConectado);
                 usuarioConectado.start();
