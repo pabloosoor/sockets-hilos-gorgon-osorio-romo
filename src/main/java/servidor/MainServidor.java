@@ -36,7 +36,7 @@ public class MainServidor {
 
                 String respuestaMenu;
                 
-                inputNombre = in.readUTF();
+                inputNombre = in.readUTF().trim().toLowerCase().replace(" ", "_");
                 ConexionHilo usuarioConectado = new ConexionHilo(in, out,inputNombre);
                 System.out.println("(Desde servidor) Cliente conectado: " + inputNombre);
                 

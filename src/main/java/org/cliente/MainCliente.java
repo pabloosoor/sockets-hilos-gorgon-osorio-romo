@@ -17,18 +17,17 @@ public class MainCliente {
             DataInputStream in = new DataInputStream(socket.getInputStream());
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 
-            //Login
+            // Login
             System.out.print("Ingrese su nombre: ");
             String inputNombrePropio = sc.nextLine();
+            inputNombrePropio = inputNombrePropio.toUpperCase().trim().replace(" ", "_");
             out.writeUTF(inputNombrePropio);
 
-
-            //Hilo para que el usuario pueda recibir mensajes sin enviar nada
-            Thread hiloEscucha = new Thread(( )-> {
+            // Hilo para recibir mensajes sin bloquear
+            Thread hiloEscucha = new Thread(() -> {
                 try {
                     while (true) {
                         String mensajeRecibido = in.readUTF();
-
                         if (mensajeRecibido.startsWith("USUARIOS_CONECTADOS:")) {
                             System.out.println("\n[SISTEMA] " + mensajeRecibido);
                         } else {
@@ -37,19 +36,46 @@ public class MainCliente {
                         System.out.print("> ");
                     }
                 } catch (IOException e) {
-                    System.out.println("\n[SISTEMA] Conexión finalizada de tu lado.");
+                    System.out.println("\n[SISTEMA] Conexión finalizada.");
                 }
             });
             hiloEscucha.start();
 
-            System.out.println("Escribe tus comandos (MSG [NOMBRE] [TEXTO], o SALIR):");
+            System.out.println("Comandos: CHAT [nombre], FIN, /all [texto], MSG [nombre] [texto], SALIR");
+
+            String destinoActual = null;
+
             while (true) {
                 System.out.print("> ");
                 String teclado = sc.nextLine();
-                out.writeUTF(teclado);
 
                 if (teclado.equalsIgnoreCase("SALIR")) {
+                    out.writeUTF("SALIR");
                     break;
+                }
+
+                if (teclado.toLowerCase().startsWith("chat ")) {
+                    destinoActual = teclado.substring(5).trim().toLowerCase();
+                    System.out.println("[SISTEMA] Ahora estás chateando con " + destinoActual + ". Escribí FIN para salir.");
+                    continue;
+                }
+
+                if (teclado.equalsIgnoreCase("FIN")) {
+                    System.out.println("[SISTEMA] Chat con " + destinoActual + " finalizado.");
+                    destinoActual = null;
+                    continue;
+                }
+
+                if (teclado.toLowerCase().startsWith("/all ")) {
+                    String texto = teclado.substring(5).trim();
+                    out.writeUTF("ALL " + texto);
+                    continue;
+                }
+
+                if (destinoActual != null) {
+                    out.writeUTF("MSG " + destinoActual + " " + teclado);
+                } else {
+                    out.writeUTF(teclado);
                 }
             }
 

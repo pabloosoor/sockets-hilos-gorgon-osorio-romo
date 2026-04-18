@@ -4,7 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-public class ConexionHilo extends Thread{
+public class ConexionHilo extends Thread {
     public DataInputStream in;
     public DataOutputStream out;
     public String nombre;
@@ -26,7 +26,7 @@ public class ConexionHilo extends Thread{
     @Override
     public void run() {
         try {
-            while (true){
+            while (true) {
                 String respuestaMenu = in.readUTF();
 
                 if (respuestaMenu.equalsIgnoreCase("SALIR")) {
@@ -35,23 +35,30 @@ public class ConexionHilo extends Thread{
                     break;
                 }
 
-                if (respuestaMenu.startsWith("MSG ")){
-                    String[] partesMensaje = respuestaMenu.split(" ", 3);
-                    
-                    if (partesMensaje.length < 3) {
+                if (respuestaMenu.startsWith("MSG ")) {
+                    String[] partes = respuestaMenu.split(" ", 3);
+                    if (partes.length < 3) {
                         enviarMensaje("(Sistema) Error de formato. Usá: MSG [NOMBRE] [TEXTO]");
                         continue;
                     }
-                    
-                    String destino = partesMensaje[1];
-                    String mensaje = partesMensaje[2];
+                    String destino = partes[1].trim().toLowerCase();
+                    String mensaje = partes[2];
 
                     ConexionHilo hiloDestino = MainServidor.usuariosConectados.get(destino);
+                    if (hiloDestino != null) {
+                        hiloDestino.enviarMensaje(nombre + " dice: " + mensaje);
+                    } else {
+                        enviarMensaje("(Sistema) El usuario " + destino + " no existe o está desconectado.");
+                    }
+                }
 
-                    if (hiloDestino != null){
-                        hiloDestino.enviarMensaje("Mensaje de " + nombre + ": " + mensaje);
-                    }else{
-                        enviarMensaje("(Sistema) El usuario " + destino + " no existe o está desconectado.");                    }
+                if (respuestaMenu.startsWith("ALL ")) {
+                    String mensaje = respuestaMenu.substring(4).trim();
+                    for (ConexionHilo hilo : MainServidor.usuariosConectados.values()) {
+                        if (!hilo.nombre.equals(nombre)) {
+                            hilo.enviarMensaje("[TODOS] " + nombre + ": " + mensaje);
+                        }
+                    }
                 }
             }
         } catch (IOException e) {
@@ -59,6 +66,5 @@ public class ConexionHilo extends Thread{
             MainServidor.usuariosConectados.remove(nombre);
             MainServidor.notificarUsuarios();
         }
-
     }
 }
