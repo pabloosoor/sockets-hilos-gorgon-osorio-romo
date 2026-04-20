@@ -41,7 +41,7 @@ public class MainCliente {
             });
             hiloEscucha.start();
 
-            System.out.println("Comandos: CHAT [nombre], FIN, /all [texto], MSG [nombre] [texto], SALIR");
+            System.out.println("Comandos: CHAT [nombre], FIN, /all [texto], SALIR");
 
             String destinoActual = null;
 
@@ -54,15 +54,33 @@ public class MainCliente {
                     break;
                 }
 
+                if (teclado.toLowerCase().startsWith("msg ")) {
+                    System.out.println("[SISTEMA] El comando MSG fue removido. Usá CHAT [nombre] para iniciar una conversación.");
+                    continue;
+                }
+
                 if (teclado.toLowerCase().startsWith("chat ")) {
+                    // FIN implícito si ya había un chat abierto
+                    if (destinoActual != null) {
+                        System.out.println("[SISTEMA] Chat con " + destinoActual + " cerrado.");
+                    }
                     destinoActual = teclado.substring(5).trim().toLowerCase();
-                    System.out.println("[SISTEMA] Ahora estás chateando con " + destinoActual + ". Escribí FIN para salir.");
+                    if (destinoActual.isEmpty()) {
+                        System.out.println("[SISTEMA] Uso: CHAT [nombre]");
+                        destinoActual = null;
+                        continue;
+                    }
+                    System.out.println("[SISTEMA] Chateando con " + destinoActual + ". Escribí FIN para salir.");
                     continue;
                 }
 
                 if (teclado.equalsIgnoreCase("FIN")) {
-                    System.out.println("[SISTEMA] Chat con " + destinoActual + " finalizado.");
-                    destinoActual = null;
+                    if (destinoActual == null) {
+                        System.out.println("[SISTEMA] No hay ningún chat activo.");
+                    } else {
+                        System.out.println("[SISTEMA] Chat con " + destinoActual + " finalizado.");
+                        destinoActual = null;
+                    }
                     continue;
                 }
 
@@ -75,7 +93,7 @@ public class MainCliente {
                 if (destinoActual != null) {
                     out.writeUTF("MSG " + destinoActual + " " + teclado);
                 } else {
-                    out.writeUTF(teclado);
+                    System.out.println("[SISTEMA] No hay chat activo. Usá CHAT [nombre] para iniciar uno.");
                 }
             }
 
