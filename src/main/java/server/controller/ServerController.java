@@ -1,16 +1,16 @@
-package servidor.controller;
+package server.controller;
 
-import servidor.model.ConexionHilo;
-import servidor.model.ServidorModel;
+import server.model.ConexionHilo;
+import server.model.ServerModel;
 
 
   //Responsabilidad única: orquestar la lógica del servidor.
 
-public class ServidorController {
+public class ServerController {
 
-    private final ServidorModel model;
+    private final ServerModel model;
 
-    public ServidorController(ServidorModel model) {
+    public ServerController(ServerModel model) {
         this.model = model;
     }
 

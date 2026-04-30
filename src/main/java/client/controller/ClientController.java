@@ -1,22 +1,22 @@
-package cliente.controller;
+package client.controller;
 
-import cliente.model.ClienteModel;
+import client.model.ClientModel;
 import org.cliente.view.ChatView;
 import org.cliente.view.LoginView;
 
 import java.io.IOException;
 
-// Responsabilidad única: coordinar LoginView/ChatView con ClienteModel.
-public class ClienteController {
+// Responsabilidad única: coordinar LoginView/ChatView con ClientModel.
+public class ClientController {
 
-    private final ClienteModel model;
+    private final ClientModel model;
     //private LoginView loginView;
     //private ChatView chatView;
 
     private Thread hiloEscucha;
 
-    public ClienteController() {
-        this.model = new ClienteModel();
+    public ClientController() {
+        this.model = new ClientModel();
     }
 
     public void iniciar() {

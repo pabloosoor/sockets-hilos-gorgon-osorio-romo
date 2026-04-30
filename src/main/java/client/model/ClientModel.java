@@ -1,4 +1,4 @@
-package cliente.model;
+package client.model;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.net.Socket;
 
 // Responsabilidad única: manejar la conexión socket del cliente.
-public class ClienteModel {
+public class ClientModel {
 
     private static final String HOST = "127.0.0.1";
     private static final int PORT = 5000;

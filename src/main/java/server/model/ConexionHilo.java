@@ -1,6 +1,6 @@
-package servidor.model;
+package server.model;
 
-import servidor.controller.ServidorController;
+import server.controller.ServerController;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -14,10 +14,10 @@ public class ConexionHilo extends Thread {
     public final DataOutputStream out;
     public final String nombre;
 
-    private final ServidorController controller;
+    private final ServerController controller;
 
     public ConexionHilo(DataInputStream in, DataOutputStream out,
-                        String nombre, ServidorController controller) {
+                        String nombre, ServerController controller) {
         this.in = in;
         this.out = out;
         this.nombre = nombre;

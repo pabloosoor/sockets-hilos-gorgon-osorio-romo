@@ -1,4 +1,4 @@
-package servidor.model;
+package server.model;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 
 //Responsabilidad única: manejar el estado del servidor (usuarios conectados).
 
-public class ServidorModel {
+public class ServerModel {
 
     private final ConcurrentHashMap<String, ConexionHilo> usuariosConectados
             = new ConcurrentHashMap<>();

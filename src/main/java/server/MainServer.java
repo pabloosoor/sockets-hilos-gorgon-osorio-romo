@@ -1,8 +1,8 @@
-package servidor;
+package server;
 
-import servidor.controller.ServidorController;
-import servidor.model.ConexionHilo;
-import servidor.model.ServidorModel;
+import server.controller.ServerController;
+import server.model.ConexionHilo;
+import server.model.ServerModel;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -12,13 +12,13 @@ import java.net.Socket;
 
  //Responsabilidad única: aceptar conexiones y delegar al controller.
 
-public class MainServidor {
+public class MainServer {
 
     private static final int PORT = 5000;
 
     public static void main(String[] args) {
-        ServidorModel model = new ServidorModel();
-        ServidorController controller = new ServidorController(model);
+        ServerModel model = new ServerModel();
+        ServerController controller = new ServerController(model);
 
         try (ServerSocket servidor = new ServerSocket(PORT)) {
             System.out.println("[Servidor] Escuchando en puerto " + PORT);

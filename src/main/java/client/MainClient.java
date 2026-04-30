@@ -1,14 +1,14 @@
-package cliente;
+package client;
 
-import cliente.controller.ClienteController;
+import client.controller.ClientController;
 
 
  //Responsabilidad única: arrancar la aplicación en el hilo de Swing (EDT).
 
-public class MainCliente {
+public class MainClient {
     public static void main(String[] args) {
         javax.swing.SwingUtilities.invokeLater(() -> {
-            ClienteController controller = new ClienteController();
+            ClientController controller = new ClientController();
             controller.iniciar();
         });
     }
