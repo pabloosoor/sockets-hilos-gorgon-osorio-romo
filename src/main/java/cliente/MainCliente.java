@@ -1,6 +1,6 @@
-package org.cliente;
+package cliente;
 
-import org.cliente.controller.ClienteController;
+import cliente.controller.ClienteController;
 
 
  //Responsabilidad única: arrancar la aplicación en el hilo de Swing (EDT).

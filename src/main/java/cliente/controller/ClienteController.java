@@ -1,6 +1,6 @@
-package org.cliente.controller;
+package cliente.controller;
 
-import org.cliente.model.ClienteModel;
+import cliente.model.ClienteModel;
 import org.cliente.view.ChatView;
 import org.cliente.view.LoginView;
 
