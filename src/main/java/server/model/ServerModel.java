@@ -35,6 +35,14 @@ public class ServerModel {
         return lista.isEmpty() ? null : lista;
     }
 
+    public boolean existeCliente(String nombre){
+        return usuariosConectados.containsKey(nombre);
+    }
+    
+    public ConexionHilo getHiloCliente(String nombre){
+        return usuariosConectados.get(nombre);
+    }
+    
     public ConcurrentHashMap<String, ConexionHilo> getTodos() {
         return usuariosConectados;
     }

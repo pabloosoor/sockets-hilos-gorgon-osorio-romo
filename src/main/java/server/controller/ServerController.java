@@ -26,23 +26,20 @@ public class ServerController {
         notificarUsuarios();
     }
 
-    public void procesarMensajePrivado(String origen, String msg) {
-        String[] partes = msg.split(" ", 3);
-        if (partes.length < 3) {
-            model.getUsuario(origen)
-                    .enviarMensaje("[Sistema] Formato: MSG [nombre] [texto]");
-            return;
-        }
-        String destino  = partes[1].trim().toLowerCase();
-        String texto    = partes[2];
-        ConexionHilo hiloDestino = model.getUsuario(destino);
+    public void procesarMensajePrivado(String emisor, String destinatariosTexto, String mensaje) {
+        String[] listaDestinatarios = destinatariosTexto.split(",");
 
-        if (hiloDestino != null) {
-            hiloDestino.enviarMensaje("[" + origen + " → vos] " + texto);
-        } else {
-            model.getUsuario(origen)
-                    .enviarMensaje("[Sistema] Usuario " + destino + " no encontrado.");
-        }
+       for(String destino : listaDestinatarios) {
+           String destinoLimpio = destino.trim();
+           
+           if(model.existeCliente(destinoLimpio)){
+               if(!destinoLimpio.equals(emisor)){
+                   ConexionHilo hiloDestino = model.getHiloCliente(destinoLimpio);
+                String mensajeFormateado = "[" + emisor + "->" + destinatariosTexto + "]" + mensaje;
+                hiloDestino.enviarMensaje(mensajeFormateado);
+               }
+           }
+       }
     }
 
     public void procesarMensajeTodos(String origen, String msg) {
@@ -52,7 +49,7 @@ public class ServerController {
                 hilo.enviarMensaje("[" + origen + " → TODOS] " + texto);
         });
     }
-
+ 
     private void notificarUsuarios() {
         model.getTodos().forEach((nombre, hilo) -> {
             String lista = model.listarUsuarios(nombre);

@@ -6,8 +6,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-  //Responsabilidad única: leer mensajes de UN cliente y delegarlos al controller.
-
+//Responsabilidad única: leer mensajes de UN cliente y delegarlos al controller.
 public class ConexionHilo extends Thread {
 
     public final DataInputStream in;
@@ -17,7 +16,7 @@ public class ConexionHilo extends Thread {
     private final ServerController controller;
 
     public ConexionHilo(DataInputStream in, DataOutputStream out,
-                        String nombre, ServerController controller) {
+            String nombre, ServerController controller) {
         this.in = in;
         this.out = out;
         this.nombre = nombre;
@@ -43,9 +42,17 @@ public class ConexionHilo extends Thread {
                     break;
                 }
                 if (msg.startsWith("MSG ")) {
-                    controller.procesarMensajePrivado(nombre, msg);
+                    String contenido = msg.substring(4);
+                    int primerEspacio = contenido.indexOf(" ");
+                    if (primerEspacio != -1) {
+                        String destinatarios = contenido.substring(0, primerEspacio);
+                        String textoMensaje = contenido.substring(primerEspacio + 1);
+                        controller.procesarMensajePrivado(nombre, destinatarios, textoMensaje);
+                    }
+
                     continue;
                 }
+
                 if (msg.startsWith("ALL ")) {
                     controller.procesarMensajeTodos(nombre, msg);
                 }

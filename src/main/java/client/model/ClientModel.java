@@ -4,17 +4,43 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-// Responsabilidad única: manejar la conexión socket del cliente.
+// Responsabilidad: Manejar la conexión socket y almacenar el estado de la sesión del usuario.
 public class ClientModel {
 
     private static final String HOST = "127.0.0.1";
     private static final int PORT = 5000;
 
+    // --- ESTADO DE RED ---
     private Socket socket;
     private DataInputStream in;
     private DataOutputStream out;
     private String nombreUsuario;
+
+    // --- ESTADO DE SESIÓN (Datos de negocio) ---
+    private Map<String, StringBuilder> historialesChat;
+    private String chatActual;
+    private List<String> contactosDelServidor;
+    private List<String> misGruposLocales;
+
+    public ClientModel() {
+        this.historialesChat = new HashMap<>();
+        this.chatActual = "TODOS";
+        this.contactosDelServidor = new ArrayList<>();
+        this.misGruposLocales = new ArrayList<>();
+        
+        // Inicializamos el estado base
+        this.historialesChat.put("TODOS", new StringBuilder());
+        this.contactosDelServidor.add("TODOS");
+    }
+
+    // ==========================================
+    //          MÉTODOS DE RED (SOCKETS)
+    // ==========================================
 
     public void conectar(String nombre) throws IOException {
         this.nombreUsuario = nombre;
@@ -49,5 +75,53 @@ public class ClientModel {
         return in.readUTF();
     }
 
-    public String getNombreUsuario() { return nombreUsuario; }
+    public String getNombreUsuario() { 
+        return nombreUsuario; 
+    }
+
+    // ==========================================
+    //      MÉTODOS DE ESTADO DE SESIÓN (DATOS)
+    // ==========================================
+
+    public String getChatActual() {
+        return chatActual;
+    }
+
+    public void setChatActual(String chatActual) {
+        this.chatActual = chatActual;
+    }
+
+    public void guardarEnHistorial(String chat, String mensaje) {
+        historialesChat.putIfAbsent(chat, new StringBuilder());
+        historialesChat.get(chat).append(mensaje).append("\n");
+    }
+
+    public String getHistorial(String chat) {
+        return historialesChat.getOrDefault(chat, new StringBuilder()).toString();
+    }
+
+    public void actualizarContactosDelServidor(List<String> contactos) {
+        this.contactosDelServidor.clear();
+        this.contactosDelServidor.add("TODOS");
+        this.contactosDelServidor.addAll(contactos);
+    }
+
+    public boolean registrarNuevoGrupo(String nombreGrupo) {
+        if (!misGruposLocales.contains(nombreGrupo)) {
+            misGruposLocales.add(nombreGrupo);
+            return true;
+        }
+        return false;
+    }
+
+    public List<String> getContactosYGrupos() {
+        // Unifica los usuarios activos del servidor con los grupos creados localmente
+        List<String> combinados = new ArrayList<>(contactosDelServidor);
+        for (String grupo : misGruposLocales) {
+            if (!combinados.contains(grupo)) {
+                combinados.add(grupo);
+            }
+        }
+        return combinados;
+    }
 }
