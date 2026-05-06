@@ -3,8 +3,8 @@ package client.controller;
 import client.model.ClientModel;
 import client.view.ChatWindow;
 import client.view.LoginView;
-import shared.Protocol;    
-import shared.Validator;  
+import shared.Protocol;
+import shared.Validator;
 
 import java.io.IOException;
 import java.util.List;
@@ -19,7 +19,7 @@ public class ClientController {
     private String miNombre;
 
     public ClientController() {
-        this.model = new ClientModel(); 
+        this.model = new ClientModel();
     }
 
     public void iniciar() {
@@ -28,7 +28,13 @@ public class ClientController {
     }
 
     public void conectar(String nombre) {
-          // --- EVENTO: CONECTARSE ---
+        // Validar antes de conectar
+        String error = Validator.validarNombre(nombre);
+        if (error != null) {
+            if (loginView != null) loginView.mostrarError(error);
+            return;
+        }
+
         try {
             this.miNombre = nombre;
             model.conectar(nombre);
@@ -36,10 +42,12 @@ public class ClientController {
 
             chatWindow = new ChatWindow();
             chatWindow.setTitle("Chat App - " + nombre + " (Chat: TODOS)");
-            chatWindow.updateContactList(new String[]{"TODOS"});
+            chatWindow.updateContactList(
+                    new String[]{"TODOS"},
+                    model.getTodosNoLeidos()
+            );
 
             registrarEventosVista();
-
             chatWindow.setVisible(true);
             iniciarHiloEscucha();
 
@@ -51,6 +59,7 @@ public class ClientController {
     }
 
     private void registrarEventosVista() {
+
         // --- EVENTO: DESCONECTARSE ---
         chatWindow.addDisconnectListener(e -> {
             desconectar();
@@ -63,9 +72,17 @@ public class ClientController {
             if (!e.getValueIsAdjusting()) {
                 String seleccionado = chatWindow.getSelectedContact();
                 if (seleccionado != null) {
-                    model.setChatActual(seleccionado); // El modelo recuerda dónde estoy
+                    // Al entrar al chat, reseteamos los no leídos
+                    model.resetearNoLeidos(seleccionado);
+                    model.setChatActual(seleccionado);
                     chatWindow.setTitle("Chat App - " + miNombre + " (Chat: " + seleccionado + ")");
                     chatWindow.setChatText(model.getHistorial(seleccionado));
+
+                    // Refrescar lista para sacar el badge
+                    chatWindow.updateContactList(
+                            model.getContactosYGrupos().toArray(new String[0]),
+                            model.getTodosNoLeidos()
+                    );
                 }
             }
         });
@@ -73,13 +90,15 @@ public class ClientController {
         // --- EVENTO: CREAR GRUPO ---
         chatWindow.addCreateGroupListener(e -> {
             List<String> seleccionados = chatWindow.getSelectedContacts();
-            
-            // Validación
+
             if (Validator.esGrupoValido(seleccionados)) {
                 String nombreGrupo = Protocol.generarNombreGrupo(seleccionados, miNombre);
-                
+
                 if (model.registrarNuevoGrupo(nombreGrupo)) {
-                    chatWindow.updateContactList(model.getContactosYGrupos().toArray(new String[0]));
+                    chatWindow.updateContactList(
+                            model.getContactosYGrupos().toArray(new String[0]),
+                            model.getTodosNoLeidos()
+                    );
                 }
             }
         });
@@ -96,13 +115,12 @@ public class ClientController {
                     } else {
                         model.enviarPrivado(chatActual, texto);
                     }
-                    
-                    String miMensajeFormateado = Protocol.formatearMensajePropio(texto);
 
+                    String miMensajeFormateado = Protocol.formatearMensajePropio(texto);
                     model.guardarEnHistorial(chatActual, miMensajeFormateado);
                     chatWindow.appendMessage(miMensajeFormateado + "\n");
-                    
                     chatWindow.clearMessageText();
+
                 } catch (IOException ex) {
                     chatWindow.appendMessage("[SISTEMA] Error al enviar mensaje.\n");
                 }
@@ -121,7 +139,8 @@ public class ClientController {
                 }
             } catch (IOException e) {
                 SwingUtilities.invokeLater(() -> {
-                    if (chatWindow != null) chatWindow.appendMessage("[SISTEMA] Conexión perdida.\n");
+                    if (chatWindow != null)
+                        chatWindow.appendMessage("[SISTEMA] Conexión perdida.\n");
                 });
             }
         });
@@ -130,23 +149,40 @@ public class ClientController {
     }
 
     private void procesarMensajeEntrante(String msg) {
-        // Formatear mensaje entrante
+
         if (Protocol.esActualizacionDeContactos(msg)) {
             List<String> contactosActualizados = Protocol.extraerContactos(msg, miNombre);
             model.actualizarContactosDelServidor(contactosActualizados);
-            chatWindow.updateContactList(model.getContactosYGrupos().toArray(new String[0]));
-            
+            chatWindow.updateContactList(
+                    model.getContactosYGrupos().toArray(new String[0]),
+                    model.getTodosNoLeidos()
+            );
+
         } else {
             String tabDestino = Protocol.determinarTabDestino(msg, miNombre);
-            
-            // Crear grupo si un mensaje viene de ahí
+
+            // Crear grupo si un mensaje viene de uno nuevo
             if (Validator.esUnGrupo(tabDestino) && model.registrarNuevoGrupo(tabDestino)) {
-                chatWindow.updateContactList(model.getContactosYGrupos().toArray(new String[0]));
+                chatWindow.updateContactList(
+                        model.getContactosYGrupos().toArray(new String[0]),
+                        model.getTodosNoLeidos()
+                );
             }
 
             model.guardarEnHistorial(tabDestino, msg);
 
-            // Solo renderizamos si el usuario está mirando esa pestaña
+            // Solo incrementar no leídos si el usuario NO está mirando ese chat
+            if (!model.getChatActual().equals(tabDestino)) {
+                model.incrementarNoLeidos(tabDestino);
+            }
+
+            // Refrescar lista con badges actualizados
+            chatWindow.updateContactList(
+                    model.getContactosYGrupos().toArray(new String[0]),
+                    model.getTodosNoLeidos()
+            );
+
+            // Solo renderizar en el área de chat si es la pestaña activa
             if (model.getChatActual().equals(tabDestino)) {
                 chatWindow.appendMessage(msg + "\n");
             }

@@ -1,14 +1,21 @@
 package client.view;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.event.ActionListener;
-import java.util.List; // Importante para devolver listas
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -20,7 +27,6 @@ import javax.swing.event.ListSelectionListener;
 
 public class ChatWindow extends JFrame {
 
-    // Componentes de la UI
     private JList<String> contactList;
     private DefaultListModel<String> contactListModel;
     private JTextArea chatArea;
@@ -37,37 +43,34 @@ public class ChatWindow extends JFrame {
         setTitle("Chat App");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(800, 500);
-        setLocationRelativeTo(null); // Centrar en pantalla
+        setLocationRelativeTo(null);
 
-        //Boton para desconectarse
+        // Botón desconectarse arriba
         btnDesconectar = new JButton("Desconectarse");
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         topPanel.add(btnDesconectar);
         this.add(topPanel, BorderLayout.NORTH);
-        
+
         // --- PANEL IZQUIERDO: Lista de Contactos ---
-        // Inicializamos el modelo y la lista
         contactListModel = new DefaultListModel<>();
         contactList = new JList<>(contactListModel);
-        
-        // Permitir múltiple selección
         contactList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        
-        JScrollPane contactScroll = new JScrollPane(contactList);
-        contactScroll.setPreferredSize(new Dimension(200, 0)); 
 
-        // Crear grupo
+        // Renderer por defecto sin badges al inicio
+        contactList.setCellRenderer(new ContactCellRenderer(new HashMap<>()));
+
+        JScrollPane contactScroll = new JScrollPane(contactList);
+        contactScroll.setPreferredSize(new Dimension(200, 0));
+
         btnCrearGrupo = new JButton("Crear Grupo");
-        
-        // Panel Lista + Botón de grupo abajo
+
         JPanel leftPanel = new JPanel(new BorderLayout());
         leftPanel.add(contactScroll, BorderLayout.CENTER);
-        leftPanel.add(btnCrearGrupo, BorderLayout.SOUTH); 
+        leftPanel.add(btnCrearGrupo, BorderLayout.SOUTH);
 
-        // Área de chat 
+        // --- PANEL DERECHO: Área de chat ---
         JPanel rightPanel = new JPanel(new BorderLayout());
 
-        // Área donde se ven los mensajes
         chatArea = new JTextArea();
         chatArea.setEditable(false);
         chatArea.setLineWrap(true);
@@ -75,25 +78,24 @@ public class ChatWindow extends JFrame {
         JScrollPane chatScroll = new JScrollPane(chatArea);
         rightPanel.add(chatScroll, BorderLayout.CENTER);
 
-        // Panel inferior para escribir y enviar
-        JPanel bottomPanel = new JPanel(new BorderLayout(5, 0)); 
+        JPanel bottomPanel = new JPanel(new BorderLayout(5, 0));
         messageField = new JTextField();
         sendButton = new JButton("Enviar");
-
         bottomPanel.add(messageField, BorderLayout.CENTER);
         bottomPanel.add(sendButton, BorderLayout.EAST);
-
         rightPanel.add(bottomPanel, BorderLayout.SOUTH);
 
-        // --- DIVISOR PRINCIPAL ---
+        // --- DIVISOR ---
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightPanel);
         splitPane.setDividerLocation(200);
 
-        // Agregamos todo a la ventana principal
         getContentPane().add(splitPane);
     }
 
-    // MÉTODOS PARA QUE EL CONTROLADOR INTERACTÚE CON LA VISTA
+    // =====================================================
+    //   MÉTODOS PÚBLICOS PARA EL CONTROLLER
+    // =====================================================
+
     public void addDisconnectListener(ActionListener l) {
         btnDesconectar.addActionListener(l);
     }
@@ -102,48 +104,41 @@ public class ChatWindow extends JFrame {
         btnCrearGrupo.addActionListener(l);
     }
 
-    // Devuelve una lista (por si selecciona varios)
-    public List<String> getSelectedContacts() {
-        return contactList.getSelectedValuesList();
-    }
-
-    // Permite al controlador agregar el listener al botón de enviar
     public void addSendButtonListener(ActionListener listener) {
         sendButton.addActionListener(listener);
-        messageField.addActionListener(listener); 
+        messageField.addActionListener(listener);
     }
 
-    // Permite al controlador obtener el texto escrito
+    public void addContactSelectionListener(ListSelectionListener listener) {
+        contactList.addListSelectionListener(listener);
+    }
+
     public String getMessageText() {
         return messageField.getText();
     }
 
-    // Permite al controlador limpiar la caja de texto después de enviar
     public void clearMessageText() {
         messageField.setText("");
     }
 
-    // Permite al controlador mostrar un mensaje en la pantalla
     public void appendMessage(String message) {
         chatArea.append(message + "\n");
-        // Auto-scroll hacia abajo
         chatArea.setCaretPosition(chatArea.getDocument().getLength());
     }
 
-    // Permite al controlador saber con quién querés chatear
     public String getSelectedContact() {
         return contactList.getSelectedValue();
     }
 
-    // Permite al controlador actualizar la lista de conectados
-    public void updateContactList(String[] contacts) {
-        contactListModel.clear();
-        for (String contact : contacts) {
-            contactListModel.addElement(contact);
-        }
+    public List<String> getSelectedContacts() {
+        return contactList.getSelectedValuesList();
     }
-    
-    // Obtener la lista actual
+
+    public void setChatText(String text) {
+        chatArea.setText(text);
+        chatArea.setCaretPosition(chatArea.getDocument().getLength());
+    }
+
     public List<String> getContactListData() {
         List<String> currentData = new ArrayList<>();
         for (int i = 0; i < contactListModel.getSize(); i++) {
@@ -152,13 +147,63 @@ public class ChatWindow extends JFrame {
         return currentData;
     }
 
-    public void addContactSelectionListener(ListSelectionListener listener) {
-        contactList.addListSelectionListener(listener);
+    /**
+     * Actualiza la lista de contactos con badges de mensajes no leídos.
+     */
+    public void updateContactList(String[] contacts, Map<String, Integer> noLeidos) {
+        contactListModel.clear();
+        for (String contact : contacts) {
+            contactListModel.addElement(contact);
+        }
+        contactList.setCellRenderer(new ContactCellRenderer(noLeidos));
+        contactList.repaint();
     }
 
-    // Reemplaza todo el texto del chat (para cuando cambiamos de pestaña)
-    public void setChatText(String text) {
-        chatArea.setText(text);
-        chatArea.setCaretPosition(chatArea.getDocument().getLength());
+    /**
+     * Sobrecarga sin badges — para compatibilidad con llamadas sin contadores.
+     */
+    public void updateContactList(String[] contacts) {
+        updateContactList(contacts, new HashMap<>());
+    }
+
+    // =====================================================
+    //   RENDERER: dibuja el badge de no leídos en la lista
+    // =====================================================
+
+    private static class ContactCellRenderer extends DefaultListCellRenderer {
+
+        private final Map<String, Integer> noLeidos;
+
+        public ContactCellRenderer(Map<String, Integer> noLeidos) {
+            this.noLeidos = noLeidos;
+        }
+
+        @Override
+        public Component getListCellRendererComponent(
+                JList<?> list, Object value, int index,
+                boolean isSelected, boolean cellHasFocus) {
+
+            JLabel label = (JLabel) super.getListCellRendererComponent(
+                    list, value, index, isSelected, cellHasFocus);
+
+            String contacto = value.toString();
+            int cantidad = noLeidos.getOrDefault(contacto, 0);
+
+            if (cantidad > 0) {
+                label.setText(contacto + "  (" + cantidad + ")");
+                label.setFont(label.getFont().deriveFont(Font.BOLD));
+                if (!isSelected) {
+                    label.setForeground(new Color(0, 120, 215)); // azul
+                }
+            } else {
+                label.setText(contacto);
+                label.setFont(label.getFont().deriveFont(Font.PLAIN));
+                if (!isSelected) {
+                    label.setForeground(list.getForeground());
+                }
+            }
+
+            return label;
+        }
     }
 }

@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-// Responsabilidad: Manejar la conexión socket y almacenar el estado de la sesión del usuario.
 public class ClientModel {
 
     private static final String HOST = "127.0.0.1";
@@ -21,19 +20,20 @@ public class ClientModel {
     private DataOutputStream out;
     private String nombreUsuario;
 
-    // --- ESTADO DE SESIÓN (Datos de negocio) ---
+    // --- ESTADO DE SESIÓN ---
     private Map<String, StringBuilder> historialesChat;
+    private Map<String, Integer> mensajesNoLeidos;
     private String chatActual;
     private List<String> contactosDelServidor;
     private List<String> misGruposLocales;
 
     public ClientModel() {
         this.historialesChat = new HashMap<>();
+        this.mensajesNoLeidos = new HashMap<>();
         this.chatActual = "TODOS";
         this.contactosDelServidor = new ArrayList<>();
         this.misGruposLocales = new ArrayList<>();
-        
-        // Inicializamos el estado base
+
         this.historialesChat.put("TODOS", new StringBuilder());
         this.contactosDelServidor.add("TODOS");
     }
@@ -47,7 +47,7 @@ public class ClientModel {
         socket = new Socket(HOST, PORT);
         in  = new DataInputStream(socket.getInputStream());
         out = new DataOutputStream(socket.getOutputStream());
-        out.writeUTF(nombre); // primer mensaje: identificarse
+        out.writeUTF(nombre);
     }
 
     public void desconectar() throws IOException {
@@ -75,12 +75,12 @@ public class ClientModel {
         return in.readUTF();
     }
 
-    public String getNombreUsuario() { 
-        return nombreUsuario; 
+    public String getNombreUsuario() {
+        return nombreUsuario;
     }
 
     // ==========================================
-    //      MÉTODOS DE ESTADO DE SESIÓN (DATOS)
+    //      MÉTODOS DE ESTADO DE SESIÓN
     // ==========================================
 
     public String getChatActual() {
@@ -115,7 +115,6 @@ public class ClientModel {
     }
 
     public List<String> getContactosYGrupos() {
-        // Unifica los usuarios activos del servidor con los grupos creados localmente
         List<String> combinados = new ArrayList<>(contactosDelServidor);
         for (String grupo : misGruposLocales) {
             if (!combinados.contains(grupo)) {
@@ -123,5 +122,25 @@ public class ClientModel {
             }
         }
         return combinados;
+    }
+
+    // ==========================================
+    //      MÉTODOS DE MENSAJES NO LEÍDOS
+    // ==========================================
+
+    public void incrementarNoLeidos(String chat) {
+        mensajesNoLeidos.put(chat, mensajesNoLeidos.getOrDefault(chat, 0) + 1);
+    }
+
+    public void resetearNoLeidos(String chat) {
+        mensajesNoLeidos.put(chat, 0);
+    }
+
+    public int getNoLeidos(String chat) {
+        return mensajesNoLeidos.getOrDefault(chat, 0);
+    }
+
+    public Map<String, Integer> getTodosNoLeidos() {
+        return mensajesNoLeidos;
     }
 }
